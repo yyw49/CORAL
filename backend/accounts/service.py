@@ -84,7 +84,7 @@ class ScheduleService:
     @staticmethod
     def schedule_study(scheduler: LabAssistant, recipient: LabAssistant, day_index: int, start: int, end: int, avail: Availability, schedule: Schedule, study: Study):
         # validate scheduler permissions
-        if getattr(scheduler, 'is_schedule_assistant', False):
+        if not getattr(scheduler, 'is_schedule_assistant', False):
             raise ValueError('Scheduler is not a schedule assistant')
 
         # validate recipient availability
@@ -97,3 +97,40 @@ class ScheduleService:
 
         # schedule the study
         ScheduleService.set_study_for_slot(schedule, day_index, start, end, recipient, study)
+    
+    @staticmethod
+    def unschedule_study(scheduler: LabAssistant, recipient: LabAssistant, day_index: int, schedule: Schedule):
+        # validate scheduler permissions
+        if not getattr(scheduler, 'is_schedule_assistant', False):
+            raise ValueError('Scheduler is not a schedule assistant')
+
+        # unschedule the study
+        ScheduleService.clear_study_for_day(schedule, day_index, recipient)
+    
+    @staticmethod
+    def clear_study_for_day(schedule: Schedule, day_index: int, recipient: LabAssistant):
+        day = ScheduleService.get_day(schedule, day_index)
+        for i in range(0, Day.SLOTS_PER_DAY):
+            if str(recipient.id) in day.slots[i]['scheduled_studies']:
+                day.slots[i]['scheduled_studies'].pop(str(recipient.id))
+        day.save(update_fields=['slots'])
+
+class StudyService:
+    @staticmethod
+    def create_study(name: str, description: str, creator: LabAssistant) -> Study:
+        if not getattr(creator, 'is_schedule_assistant', False):
+            raise ValueError('Creator is not a schedule assistant')
+        return Study.objects.create(name=name, description=description)
+
+    @staticmethod
+    def get_study(study_id: int) -> Study:
+        return Study.objects.get(id=study_id)
+
+    @staticmethod
+    def update_study(study: Study, name: str, description: str, creator: LabAssistant) -> Study:
+        if not getattr(creator, 'is_schedule_assistant', False):
+            raise ValueError('Creator is not a schedule assistant')
+        study.name = name
+        study.description = description
+        study.save(update_fields=['name', 'description'])
+        return study
