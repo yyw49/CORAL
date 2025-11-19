@@ -6,7 +6,8 @@ from django.utils import timezone
 from datetime import datetime, date
 
 # Import your existing models
-from accounts.models import Study, LabAssistant, Assignment
+from accounts.models import Study, LabAssistant
+from scheduling.models import Assignment
 
 
 # ==========================================

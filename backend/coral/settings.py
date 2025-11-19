@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'accounts',
     'scheduling',
     'integrations',
+    'studies',
 ]
 
 MIDDLEWARE = [
@@ -120,6 +121,17 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# SONA API integration defaults
+SONA_API = {
+    'BASE_URL': config('SONA_API_BASE_URL', default=''),
+    'KEY': config('SONA_API_KEY', default=''),
+    'TIMEOUT': config('SONA_API_TIMEOUT', default=15, cast=int),
+    'ACTIVE_FLAG': config('SONA_API_ACTIVE_FLAG', default=1, cast=int),
+    'APPROVED_FLAG': config('SONA_API_APPROVED_FLAG', default=1, cast=int),
+    'WEB_FLAG': config('SONA_API_WEB_FLAG', default=0, cast=int),
+    'SURVEY_FLAG': config('SONA_API_SURVEY_FLAG', default=-1, cast=int),
+}
 
 # Celery Configuration
 CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')

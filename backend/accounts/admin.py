@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import LabAssistant, Availability, Study, Assignment
+from .models import LabAssistant, Study
+from scheduling.models import Availability, Assignment
 
 
 @admin.register(LabAssistant)

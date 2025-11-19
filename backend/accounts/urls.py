@@ -11,7 +11,6 @@ router.register(r'lab-assistants', ra_views.LabAssistantViewSet, basename='lab-a
 urlpatterns = [
     # --- 1. Developer Tools ---
     # Keeps the "Log In" button working in the browser interface
-    path('api-auth/', include('rest_framework.urls')),
 
 
     path('login/', auth.login_view, name='api_login'),
