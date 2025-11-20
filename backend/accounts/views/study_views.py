@@ -8,6 +8,8 @@ from datetime import datetime, date
 # Import your existing models
 from accounts.models import Study, LabAssistant
 from scheduling.models import Assignment
+from studies import services as sona_services
+from studies.sona_client import SonaAPIError
 
 
 # ==========================================
@@ -98,6 +100,18 @@ class StudySerializer(serializers.ModelSerializer):
         return None
 
 
+class SonaScheduleRequestSerializer(serializers.Serializer):
+    start_date = serializers.DateField(required=True)
+    end_date = serializers.DateField(required=True)
+
+    def validate(self, attrs):
+        if attrs['start_date'] > attrs['end_date']:
+            raise serializers.ValidationError(
+                {"end_date": "end_date must be greater than or equal to start_date."}
+            )
+        return attrs
+
+
 # ==========================================
 # 2. The ViewSet
 # ==========================================
@@ -175,3 +189,29 @@ class StudyViewSet(viewsets.ModelViewSet):
                 "success": False,
                 "message": "No available RA found."
             }, status=status.HTTP_409_CONFLICT)
+
+    @action(detail=False, methods=['get'], url_path='sona-schedules')
+    def sona_schedules(self, request):
+        """ GET /api/studies/sona-schedules/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD """
+        serializer = SonaScheduleRequestSerializer(
+            data=request.query_params or None
+        )
+        serializer.is_valid(raise_exception=True)
+        start = serializer.validated_data['start_date']
+        end = serializer.validated_data['end_date']
+
+        try:
+            schedules = sona_services.fetch_studies_for_window(
+                start_date=start,
+                end_date=end,
+            )
+        except SonaAPIError as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        return Response({
+            "count": len(schedules),
+            "results": [schedule.to_dict() for schedule in schedules],
+        })
