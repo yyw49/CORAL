@@ -28,10 +28,10 @@ class LabAssistant(models.Model):
 
 
 
-class Study(models.Model):
+class SonaStudySchedule(models.Model):
     """
-    A single scheduled study session (one concrete event).
-    The admin fills: name, description, date, start_time, end_time.
+    Representation of a SONA study schedule entry that we can persist
+    locally when needed.
     """
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -45,6 +45,19 @@ class Study(models.Model):
         null=True,
         related_name='created_studies'
     )
+    experiment_id = models.IntegerField(null=True, blank=True, db_index=True)
+    timeslot_id = models.IntegerField(null=True, blank=True)
+    timeslot_date = models.DateTimeField(null=True, blank=True)
+    duration_minutes = models.IntegerField(null=True, blank=True)
+    num_signed_up = models.IntegerField(null=True, blank=True)
+    num_students = models.IntegerField(null=True, blank=True)
+    researcher_id = models.IntegerField(null=True, blank=True)
+    survey_flag = models.IntegerField(null=True, blank=True)
+    web_flag = models.IntegerField(null=True, blank=True)
+    videoconf_flag = models.IntegerField(null=True, blank=True)
+    videoconf_url = models.URLField(blank=True)
+    raw_payload = models.JSONField(default=dict, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -53,6 +66,5 @@ class Study(models.Model):
 
     def __str__(self):
         return f"{self.name} on {self.date} {self.start_time}-{self.end_time} @ {self.location}"
-
 
 

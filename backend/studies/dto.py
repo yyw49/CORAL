@@ -188,6 +188,3 @@ def filter_by_date_range(
         if study.matches_window(start, end):
             yield study
 
-
-# Alias for compatibility — any import expecting `Study` will get the SONA schedule.
-Study = SonaStudySchedule

@@ -6,7 +6,7 @@ from django.utils import timezone
 from datetime import datetime, date
 
 # Import your existing models
-from accounts.models import Study, LabAssistant
+from accounts.models import SonaStudySchedule, LabAssistant
 from scheduling.models import Assignment
 from studies import services as sona_services
 from studies.sona_client import SonaAPIError
@@ -36,7 +36,7 @@ class StudySerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
 
     class Meta:
-        model = Study
+        model = SonaStudySchedule
         fields = [
             'id',
             'title',       # Maps to name
@@ -117,7 +117,7 @@ class SonaScheduleRequestSerializer(serializers.Serializer):
 # ==========================================
 
 class StudyViewSet(viewsets.ModelViewSet):
-    queryset = Study.objects.all().order_by('-date', '-start_time')
+    queryset = SonaStudySchedule.objects.all().order_by('-date', '-start_time')
     serializer_class = StudySerializer
     permission_classes = [IsAuthenticated]
 

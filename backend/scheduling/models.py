@@ -1,6 +1,6 @@
 from django.db import models
 
-from accounts.models import LabAssistant, Study
+from accounts.models import LabAssistant, SonaStudySchedule
 
 class Availability(models.Model):
     """Recurring weekly availability pattern"""
@@ -43,7 +43,7 @@ class TimeEntry(models.Model):
         related_name='time_entries' # This name is crucial for the queries below
     )
     study = models.ForeignKey(
-        Study,
+        SonaStudySchedule,
         on_delete=models.SET_NULL,
         null=True,
         related_name='time_entries'
@@ -75,7 +75,7 @@ class Assignment(models.Model):
         related_name='assignments'
     )
     study = models.ForeignKey(
-        Study,
+        SonaStudySchedule,
         on_delete=models.CASCADE,
         related_name='assignments'
     )

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import LabAssistant, Study
+from .models import LabAssistant, SonaStudySchedule
 from scheduling.models import Availability, Assignment
 
 
@@ -25,8 +25,8 @@ class AvailabilityAdmin(admin.ModelAdmin):
     day_of_week_display.short_description = "Day of week"
 
 
-@admin.register(Study)
-class StudyAdmin(admin.ModelAdmin):
+@admin.register(SonaStudySchedule)
+class SonaStudyScheduleAdmin(admin.ModelAdmin):
     list_display = ['name', 'date', 'start_time', 'end_time', 'location', 'created_by', 'created_at']
     list_filter = ['date', 'location']
     search_fields = ['name', 'location', 'description']

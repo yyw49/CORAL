@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from scheduling.models import TimeEntry
-from accounts.models import Study
+from accounts.models import SonaStudySchedule
 
 
 # ==========================================

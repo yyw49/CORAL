@@ -1,7 +1,7 @@
 from rest_framework import viewsets, serializers, permissions, status
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
-from scheduling.models import Assignment, Study, LabAssistant
+from scheduling.models import Assignment, LabAssistant
 
 
 # ==========================================

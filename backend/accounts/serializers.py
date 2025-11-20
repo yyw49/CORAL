@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import LabAssistant, Availability, Study, Assignment
+from .models import LabAssistant, Availability, SonaStudySchedule, Assignment
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -42,7 +42,7 @@ class StudySerializer(serializers.ModelSerializer):
     assigned_count = serializers.SerializerMethodField()
 
     class Meta:
-        model = Study
+        model = SonaStudySchedule
         fields = [
             'id', 'name', 'description', 'date', 'start_time', 'end_time',
             'created_by', 'created_by_name', 'assigned_count',
