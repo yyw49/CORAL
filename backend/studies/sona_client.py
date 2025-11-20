@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from datetime import date
+from typing import Dict, List, Optional, Union
 from xml.etree import ElementTree as ET
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 import requests
 
-from .dto import SonaStudy
+from .dto import SonaStudySchedule
 
 
 class SonaAPIError(RuntimeError):
@@ -33,10 +34,10 @@ class SonaApiConfig:
     base_url: str
     api_key: str
     timeout: int
-    active_flag: int
-    approved_flag: int
-    web_flag: int
-    survey_flag: int
+    location_id: int
+    lab_only: int
+    schedule_start: str
+    schedule_end: str
 
     @classmethod
     def from_settings(cls) -> "SonaApiConfig":
@@ -53,17 +54,17 @@ class SonaApiConfig:
             base_url=base_url,
             api_key=api_key,
             timeout=int(config.get("TIMEOUT", 15)),
-            active_flag=int(config.get("ACTIVE_FLAG", 1)),
-            approved_flag=int(config.get("APPROVED_FLAG", 1)),
-            web_flag=int(config.get("WEB_FLAG", 0)),
-            survey_flag=int(config.get("SURVEY_FLAG", -1)),
+            location_id=int(config.get("LOCATION_ID", -2)),
+            lab_only=int(config.get("LAB_ONLY", 1)),
+            schedule_start=str(config.get("SCHEDULE_START", "1900-01-01")),
+            schedule_end=str(config.get("SCHEDULE_END", "2100-01-01")),
         )
 
 
 class SonaApiClient:
     """
-    Thin wrapper around the SONA API that exposes just what we need for
-    SonaGetStudyList.
+    Thin wrapper around the SONA API that exposes what we need for
+    SonaGetStudyScheduleList.
     """
 
     def __init__(
@@ -74,33 +75,41 @@ class SonaApiClient:
         self.config = config or SonaApiConfig.from_settings()
         self.session = session or requests.Session()
 
-    def get_study_list(
+    def get_study_schedule(
         self,
         *,
-        active: Optional[int] = None,
-        approved: Optional[int] = None,
-        web_flag: Optional[int] = None,
-        survey_flag: Optional[int] = None,
-    ) -> List[SonaStudy]:
+        start_date: Optional[Union[str, date]] = None,
+        end_date: Optional[Union[str, date]] = None,
+        location_id: Optional[int] = None,
+        lab_only: Optional[int] = None,
+    ) -> List[SonaStudySchedule]:
         params = {
             "api_key": self.config.api_key,
-            "active": active
-            if active is not None
-            else self.config.active_flag,
-            "approved": approved
-            if approved is not None
-            else self.config.approved_flag,
-            "web_flag": web_flag
-            if web_flag is not None
-            else self.config.web_flag,
-            "survey_flag": survey_flag
-            if survey_flag is not None
-            else self.config.survey_flag,
+            "location_id": location_id
+            if location_id is not None
+            else self.config.location_id,
+            "start_date": self._format_date(start_date)
+            or self.config.schedule_start,
+            "end_date": self._format_date(end_date)
+            or self.config.schedule_end,
+            "lab_only": lab_only
+            if lab_only is not None
+            else self.config.lab_only,
         }
-        response_text = self._request("SonaGetStudyList", params)
+        response_text = self._request("SonaGetStudyScheduleList", params)
         return self._parse_studies(response_text)
 
-    def _request(self, resource: str, params: Dict[str, int]) -> str:
+    @staticmethod
+    def _format_date(value: Optional[Union[str, date]]) -> Optional[str]:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value
+        return value.isoformat()
+
+    def _request(
+        self, resource: str, params: Dict[str, Union[str, int]]
+    ) -> str:
         url = f"{self.config.base_url}/{resource}"
         try:
             response = self.session.get(
@@ -113,7 +122,7 @@ class SonaApiClient:
                 f"Unable to reach SONA API: {exc}"
             ) from exc
 
-    def _parse_studies(self, payload: str) -> List[SonaStudy]:
+    def _parse_studies(self, payload: str) -> List[SonaStudySchedule]:
         try:
             root = ET.fromstring(payload)
         except ET.ParseError as exc:
@@ -123,16 +132,16 @@ class SonaApiClient:
         if errors:
             raise SonaAPIError("; ".join(errors))
 
-        studies: List[SonaStudy] = []
+        studies: List[SonaStudySchedule] = []
         for node in root.iter():
-            if _strip_tag(node.tag) != "APIStudyInfo":
+            if _strip_tag(node.tag) != "APIStudySchedule":
                 continue
             study_payload = {
                 _strip_tag(child.tag): _clean_text(child.text)
                 for child in node
             }
             try:
-                studies.append(SonaStudy.from_payload(study_payload))
+                studies.append(SonaStudySchedule.from_payload(study_payload))
             except ValueError:
                 # Skip malformed entries but keep the rest of the payload so
                 # partial data does not prevent the user from seeing anything.

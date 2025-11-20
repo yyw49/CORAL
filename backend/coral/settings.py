@@ -127,10 +127,10 @@ SONA_API = {
     'BASE_URL': config('SONA_API_BASE_URL', default=''),
     'KEY': config('SONA_API_KEY', default=''),
     'TIMEOUT': config('SONA_API_TIMEOUT', default=15, cast=int),
-    'ACTIVE_FLAG': config('SONA_API_ACTIVE_FLAG', default=1, cast=int),
-    'APPROVED_FLAG': config('SONA_API_APPROVED_FLAG', default=1, cast=int),
-    'WEB_FLAG': config('SONA_API_WEB_FLAG', default=0, cast=int),
-    'SURVEY_FLAG': config('SONA_API_SURVEY_FLAG', default=-1, cast=int),
+    'LOCATION_ID': config('SONA_API_LOCATION_ID', default=-2, cast=int),
+    'LAB_ONLY': config('SONA_API_LAB_ONLY', default=1, cast=int),
+    'SCHEDULE_START': config('SONA_API_SCHEDULE_START', default='1900-01-01'),
+    'SCHEDULE_END': config('SONA_API_SCHEDULE_END', default='2100-01-01'),
 }
 
 # Celery Configuration
