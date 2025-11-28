@@ -1,9 +1,10 @@
-from rest_framework import viewsets, serializers
+from rest_framework import viewsets, serializers, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import datetime, date, timedelta
 from accounts.models import LabAssistant
+from accounts.permissions import IsScheduleAssistant
 
 
 class LabAssistantSerializer(serializers.ModelSerializer):
@@ -16,6 +17,7 @@ class LabAssistantSerializer(serializers.ModelSerializer):
 
     # 3. New Metric Fields (Renamed for clarity)
     totalCompletedHours = serializers.SerializerMethodField()
+    dateRangeCompletedHours = serializers.SerializerMethodField()
     weeklyScheduledHours = serializers.SerializerMethodField()
     avatar = serializers.SerializerMethodField()
 
@@ -27,6 +29,7 @@ class LabAssistantSerializer(serializers.ModelSerializer):
             'email',
             'availability',
             'totalCompletedHours',  # Replaces totalHours
+            'dateRangeCompletedHours',  # Hours worked in requested range
             'weeklyScheduledHours',  # New field
             'avatar'
         ]
@@ -53,6 +56,59 @@ class LabAssistantSerializer(serializers.ModelSerializer):
 
         total = 0
         for assign in past_assignments:
+            total += self._calculate_study_hours(assign.study)
+        return round(total, 1)
+
+    def _get_date_from_request(self, request, key):
+        if not request:
+            return None
+        date_str = request.query_params.get(key)
+        if not date_str:
+            return None
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return None
+
+    def get_dateRangeCompletedHours(self, obj):
+        """
+        RANGE HISTORY: Hours worked between start_date and end_date (inclusive).
+        Defaults to the 1-week window starting from the most recent Monday.
+        """
+        request = self.context.get('request')
+        start_date = self._get_date_from_request(request, 'start_date')
+        end_date = self._get_date_from_request(request, 'end_date')
+
+        # If only one bound is provided, infer a 7-day window
+        if start_date and not end_date:
+            end_date = start_date + timedelta(days=6)
+        elif end_date and not start_date:
+            start_date = end_date - timedelta(days=6)
+
+        today = timezone.now().date()
+
+        # Default window: most recent Monday through Sunday
+        if not start_date and not end_date:
+            start_date = today - timedelta(days=today.weekday())
+            end_date = start_date + timedelta(days=6)
+
+        # Safety fallback if a bound is still missing
+        if not start_date:
+            start_date = today - timedelta(days=today.weekday())
+        if not end_date:
+            end_date = start_date + timedelta(days=6)
+
+        # Ensure chronological order
+        if end_date < start_date:
+            return 0
+
+        assignments = obj.assignments.filter(
+            study__date__range=[start_date, end_date],
+            study__date__lte=today  # Only completed work
+        ).select_related('study')
+
+        total = 0
+        for assign in assignments:
             total += self._calculate_study_hours(assign.study)
         return round(total, 1)
 
@@ -125,3 +181,38 @@ class LabAssistantViewSet(viewsets.ReadOnlyModelViewSet):
             })
 
         return Response(data)
+
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='hours-worked',
+        permission_classes=[IsScheduleAssistant]
+    )
+    def hours_worked(self, request):
+        """
+        GET /api/lab-assistants/hours-worked/?user_id=...&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
+        Schedule admins can fetch hours worked for any RA in a given range.
+        """
+        user_id = request.query_params.get('user_id')
+        if not user_id:
+            return Response(
+                {"detail": "user_id query parameter is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            ra = LabAssistant.objects.select_related('user').get(user__id=user_id)
+        except LabAssistant.DoesNotExist:
+            return Response(
+                {"detail": "Lab Assistant not found for provided user_id."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.get_serializer(ra)
+        hours_worked = serializer.get_dateRangeCompletedHours(ra)
+
+        return Response({
+            "labAssistantId": ra.id,
+            "labAssistantName": ra.user.get_full_name(),
+            "dateRangeCompletedHours": hours_worked
+        })
