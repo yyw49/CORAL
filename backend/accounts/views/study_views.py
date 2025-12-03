@@ -4,6 +4,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from datetime import datetime, date
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import permission_classes
+
 
 # Import your existing models
 from accounts.models import SonaStudySchedule, LabAssistant
@@ -119,7 +122,8 @@ class SonaScheduleRequestSerializer(serializers.Serializer):
 class StudyViewSet(viewsets.ModelViewSet):
     queryset = SonaStudySchedule.objects.all().order_by('-date', '-start_time')
     serializer_class = StudySerializer
-    permission_classes = [IsAuthenticated]
+    # TODO: reverse
+    # permission_classes = [IsAuthenticated]
 
     @action(detail=True, methods=['post'])
     def assign(self, request, pk=None):
@@ -190,7 +194,9 @@ class StudyViewSet(viewsets.ModelViewSet):
                 "message": "No available RA found."
             }, status=status.HTTP_409_CONFLICT)
 
-    @action(detail=False, methods=['get'], url_path='sona-schedules')
+    #TODO: reverse
+    @action(detail=False, methods=['get'], url_path='sona-schedules', permission_classes=[AllowAny])
+    # @permission_classes([AllowAny])
     def sona_schedules(self, request):
         """ GET /api/studies/sona-schedules/?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD """
         serializer = SonaScheduleRequestSerializer(
