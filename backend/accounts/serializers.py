@@ -8,6 +8,7 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150)
     
     def validate_email(self, value):
         """Ensure email is @usc.edu and not already registered"""
