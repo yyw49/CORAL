@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import LabAssistant, Availability, SonaStudySchedule, Assignment
+from .models import LabAssistant, SonaStudySchedule
+from scheduling.models import Availability, Assignment
 
 
 class RegisterSerializer(serializers.Serializer):
