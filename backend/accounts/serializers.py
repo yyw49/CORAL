@@ -3,6 +3,43 @@ from django.contrib.auth.models import User
 from .models import LabAssistant, Availability, SonaStudySchedule, Assignment
 
 
+class RegisterSerializer(serializers.Serializer):
+    """Serializer for user registration with USC email validation"""
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
+    first_name = serializers.CharField(max_length=150)
+    
+    def validate_email(self, value):
+        """Ensure email is @usc.edu and not already registered"""
+        value = value.lower().strip()
+        
+        if not value.endswith('@usc.edu'):
+            raise serializers.ValidationError("Only USC email addresses (@usc.edu) are allowed")
+        
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("An account with this email already exists")
+        
+        return value
+    
+    def create(self, validated_data):
+        """Create User and LabAssistant profile"""
+        user = User.objects.create_user(
+            username=validated_data['email'],  # Use email as username
+            email=validated_data['email'],
+            password=validated_data['password'],
+            first_name=validated_data['first_name'],
+            last_name=validated_data['last_name']
+        )
+        
+        # Create linked LabAssistant profile with default RA role
+        LabAssistant.objects.create(
+            user=user,
+            role=LabAssistant.Role.RA  # Default role is Research Assistant
+        )
+        
+        return user
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -15,7 +52,7 @@ class LabAssistantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LabAssistant
-        fields = ['id', 'user', 'is_schedule_assistant', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'role', 'is_schedule_assistant', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
