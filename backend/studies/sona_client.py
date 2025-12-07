@@ -60,6 +60,33 @@ class SonaApiConfig:
             schedule_end=str(config.get("SCHEDULE_END", "2100-01-01")),
         )
 
+    @classmethod
+    def from_values(
+        cls,
+        *,
+        base_url: str,
+        api_key: str,
+        timeout: Optional[int] = None,
+        location_id: Optional[int] = None,
+        lab_only: Optional[int] = None,
+        schedule_start: Optional[str] = None,
+        schedule_end: Optional[str] = None,
+    ) -> "SonaApiConfig":
+        defaults = cls.from_settings()
+        url = (base_url or "").rstrip("/")
+        key = api_key or ""
+        if not url or not key:
+            raise ImproperlyConfigured("SONA API base_url and api_key are required.")
+        return cls(
+            base_url=url,
+            api_key=key,
+            timeout=timeout or defaults.timeout,
+            location_id=location_id if location_id is not None else defaults.location_id,
+            lab_only=lab_only if lab_only is not None else defaults.lab_only,
+            schedule_start=schedule_start or defaults.schedule_start,
+            schedule_end=schedule_end or defaults.schedule_end,
+        )
+
 
 class SonaApiClient:
     """

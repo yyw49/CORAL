@@ -70,17 +70,18 @@ def normalize_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 class SonaStudySchedule:
     experiment_id: int
     study_name: str
-    timeslot_id: Optional[int]
-    timeslot_date: Optional[datetime]
-    duration_minutes: Optional[int]
-    location: Optional[str]
-    num_signed_up: Optional[int]
-    num_students: Optional[int]
-    researcher_id: Optional[int]
-    survey_flag: Optional[int]
-    web_flag: Optional[int]
-    videoconf_flag: Optional[int]
-    videoconf_url: Optional[str]
+    site: Optional[str] = None
+    timeslot_id: Optional[int] = None
+    timeslot_date: Optional[datetime] = None
+    duration_minutes: Optional[int] = None
+    location: Optional[str] = None
+    num_signed_up: Optional[int] = None
+    num_students: Optional[int] = None
+    researcher_id: Optional[int] = None
+    survey_flag: Optional[int] = None
+    web_flag: Optional[int] = None
+    videoconf_flag: Optional[int] = None
+    videoconf_url: Optional[str] = None
     raw: Dict[str, Any] = field(default_factory=dict)
     timeline: Dict[str, datetime] = field(default_factory=dict)
 
@@ -100,6 +101,7 @@ class SonaStudySchedule:
         return cls(
             experiment_id=experiment_id,
             study_name=normalized.get("study_name") or f"Study {experiment_id}",
+            site=normalized.get("site"),
             timeslot_id=_to_int(normalized.get("timeslot_id")),
             timeslot_date=parsed_timeslot,
             duration_minutes=_to_int(
@@ -156,6 +158,7 @@ class SonaStudySchedule:
         base: Dict[str, Any] = {
             "experimentId": self.experiment_id,
             "studyName": self.study_name,
+            "site": self.site,
             "timeslotId": self.timeslot_id,
             "timeslotDate": self.timeslot_date.isoformat()
             if self.timeslot_date
@@ -187,4 +190,3 @@ def filter_by_date_range(
     for study in studies:
         if study.matches_window(start, end):
             yield study
-

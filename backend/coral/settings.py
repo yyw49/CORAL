@@ -160,6 +160,12 @@ SONA_API = {
     'SCHEDULE_END': config('SONA_API_SCHEDULE_END', default='2100-01-01'),
 }
 
+# Optional secondary SONA site (Marketing)
+SONA_MKT = {
+    'BASE_URL': config('SONA_MKT_BASE_URL', default=''),
+    'KEY': config('SONA_MKT_API_KEY', default=''),
+}
+
 # Celery Configuration
 CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://localhost:6379/0')
